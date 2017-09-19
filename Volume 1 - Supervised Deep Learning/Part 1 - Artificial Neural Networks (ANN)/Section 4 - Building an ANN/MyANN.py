@@ -37,8 +37,17 @@ sc = StandardScaler()
 X_train = sc.fit_transform(X_train)
 X_test = sc.transform(X_test)
 
-# Fitting classifier to the Training set
-# Create your classifier here
+#Making the ANN
+import keras
+from keras.models import Sequential
+from keras.layers import Dense
+
+#Initializing ANN
+classifier = Sequential()
+
+#Adding Input Layer and First hidden layer
+#Step 1: Randomly initialize the weights to small numbers close to 0 but not 0
+classifier.add(Dense(output_dim = 6,init = 'uniform',activation = 'relu',input_dim = 11))
 
 # Predicting the Test set results
 y_pred = classifier.predict(X_test)
