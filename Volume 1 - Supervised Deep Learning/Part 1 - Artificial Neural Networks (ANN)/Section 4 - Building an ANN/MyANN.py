@@ -88,3 +88,22 @@ cm = confusion_matrix(y_test, y_pred)
 #[[]] make first line in 2d array with just one line
 new_prediction = classifier.predict(sc.transform(np.array([[0,0,600,1,40,3,60000,2,1,1,50000]])))
 new_prediction = new_prediction > 0.5
+
+
+#Part 4 - Evaluating, Improving and Tuning the ANN
+import keras
+from keras.wrappers.scikit_learn import KerasClassifier
+from sklearn.model_selection import cross_val_score
+from keras.models import Sequential
+from keras.layers import Dense
+def build_classifier():
+    classifier = Sequential()
+    classifier.add(Dense(6,activation = 'relu',kernel_initializer = 'uniform',input_shape=(11,)))
+    classifier.add(Dense(6,activation = 'relu',kernel_initializer = 'uniform'))
+    classifier.add(Dense(1,activation = 'sigmoid',kernel_initializer = 'uniform'))
+    classifier.compile(optimizer = 'adam',loss = 'binary_crossentropy',metrics= ['accuracy'])
+    return classifier
+
+kfoldClassifier = KerasClassifier(build_fn = build_classifier,batch_size = 10, epochs = 100)
+accuracies = cross_val_score(estimator = kfoldClassifier,X = X_train,y = y_train,cv = 10)
+    
