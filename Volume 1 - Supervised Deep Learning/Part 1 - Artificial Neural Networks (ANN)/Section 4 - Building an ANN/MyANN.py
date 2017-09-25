@@ -41,6 +41,7 @@ X_test = sc.transform(X_test)
 import keras
 from keras.models import Sequential
 from keras.layers import Dense
+from keras.layers import Dropout
 
 #Initializing ANN as sequence of layers
 classifier = Sequential()
@@ -50,9 +51,12 @@ classifier = Sequential()
 #classifier.add(Dense(output_dim = 6,init = 'uniform',activation = 'relu',input_dim = 11))
 #first hidden layer with 6 output and 11 inputs. Activation is rectified linear and initialized weight with uniform distribution
 classifier.add(Dense(6,activation = 'relu',kernel_initializer = 'uniform',input_shape=(11,)))
+#adding dropout to first hidden layer to reduce overfitting
+classifier.add(Dropout(rate = 0.1))
 
 #Adding the second hidden layer
 classifier.add(Dense(6,activation = 'relu',kernel_initializer = 'uniform'))
+classifier.add(Dropout(rate = 0.1))
 
 #Adding the output layer, changing the output dimension and the activation to sigmoid
 classifier.add(Dense(1,activation = 'sigmoid',kernel_initializer = 'uniform'))
@@ -90,7 +94,7 @@ new_prediction = classifier.predict(sc.transform(np.array([[0,0,600,1,40,3,60000
 new_prediction = new_prediction > 0.5
 
 
-#Part 4 - Evaluating, Improving and Tuning the ANN
+#Part 4 - Evaluating, Improving ANN
 import keras
 from keras.wrappers.scikit_learn import KerasClassifier
 from sklearn.model_selection import cross_val_score
@@ -105,5 +109,39 @@ def build_classifier():
     return classifier
 
 kfoldClassifier = KerasClassifier(build_fn = build_classifier,batch_size = 10, epochs = 100)
-accuracies = cross_val_score(estimator = kfoldClassifier,X = X_train,y = y_train,cv = 10)
-    
+accuracies = cross_val_score(estimator = kfoldClassifier,X = X_train,y = y_train,cv = 10,n_jobs = -1)
+
+mean = accuracies.mean()
+variance = accuracies.std()
+
+#Part 5 - Tuning the ANN
+from keras.wrappers.scikit_learn import KerasClassifier
+from sklearn.model_selection import GridSearchCV
+from keras.models import Sequential
+from keras.layers import Dense
+def build_classifier(optimizer):
+    classifier = Sequential()
+    classifier.add(Dense(6,activation = 'relu',kernel_initializer = 'uniform',input_shape=(11,)))
+    classifier.add(Dense(6,activation = 'relu',kernel_initializer = 'uniform'))
+    classifier.add(Dense(1,activation = 'sigmoid',kernel_initializer = 'uniform'))
+    classifier.compile(optimizer = optimizer,loss = 'binary_crossentropy',metrics= ['accuracy'])
+    return classifier
+
+#removing batch search and epochs because we want to tune it
+kfoldClassifier = KerasClassifier(build_fn = build_classifier)
+#creating dictionary that contains all the hyperparameters. Keys=>hyperparameters and Values=>values of the parameter
+parameters = {'batch_size':[25,32],
+              'epochs':[100,200],
+              'optimizer':['adam','rmsprop']}
+
+grid_search = GridSearchCV(estimator = kfoldClassifier,
+                           param_grid = parameters,
+                           scoring = 'accuracy',
+                           cv = 10)
+
+
+grid_search = grid_search.fit(X_train,y_train)
+best_parameters = grid_search.best_params_
+best_accuracy = grid_search.best_score_
+
+
